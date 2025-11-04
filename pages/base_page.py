@@ -4,7 +4,6 @@ from selenium.webdriver.support import expected_conditions as EC
 import allure
 
 
-
 class BasePage:
     def __init__(self, driver):
         self.driver = driver
@@ -16,19 +15,29 @@ class BasePage:
     
     @allure.step('Находим элементы {locator}')
     def find_elements(self, locator):
-        return self.driver.find_elements(*locator)
+        return self.wait.until(EC.presence_of_all_elements_located(locator))
     
     @allure.step('Кликаем на элемент {locator}')
     def click_element(self, locator):
         element = self.find_element(locator)
         element.click()
 
+    @allure.step('Кликаем на элемент через JavaScript {locator}')
+    def click_element_js(self, locator):
+        element = self.find_element(locator)
+        self.driver.execute_script("arguments[0].click();", element)
+
+
+
     @allure.step('Проверяем видимость элемента {locator}')
-    def is_element_visible(self, locator):
+    def is_element_visible(self, locator, timeout=10):
         try:
-            return self.find_element(locator).is_displayed()
-        except:
-             return False
+            WebDriverWait(self.driver, timeout).until(
+                EC.visibility_of_element_located(locator)
+            )
+            return True
+        except TimeoutException:
+            return False
 
 
     @allure.step('Ждем видимость элемента {locator}')
@@ -49,7 +58,11 @@ class BasePage:
     @allure.step('Прокручиваем к элементу {locator}')
     def scroll_to_element(self, locator):
         element = self.find_element(locator)
-        self.driver.execute_script("arguments[0].scrollIntoView();", element)           
+        self.driver.execute_script("arguments[0].scrollIntoView();", element) 
+
+    @allure.step('Выполняем JavaScript код')
+    def execute_script(self, script, *args):
+        return self.driver.execute_script(script, *args)   
 
 
     @allure.step('Ожидаем увеличения значения')

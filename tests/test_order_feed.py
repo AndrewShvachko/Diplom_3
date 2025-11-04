@@ -1,5 +1,6 @@
 import pytest
 import allure
+from urls import Urls
 from pages.main_page import MainPage
 from pages.order_feed_page import OrderFeedPage
 

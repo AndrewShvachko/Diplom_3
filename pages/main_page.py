@@ -1,7 +1,4 @@
 import allure
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from .base_page import BasePage
 from locators.main_page_locators import MainPageLocators
 
@@ -11,18 +8,25 @@ class MainPage(BasePage):
         super().__init__(driver)
         self.locators = MainPageLocators()
 
+    @allure.step('Авторизуем пользователя {email}')
+    def login(self, email, password):
+        self.click_element(self.locators.LOGIN_BUTTON_MAIN)
+        self.find_element(self.locators.EMAIL_INPUT).send_keys(email)
+        self.find_element(self.locators.PASSWORD_INPUT).send_keys(password)
+        self.click_element(self.locators.LOGIN_BUTTON_AUTH)   
+
+    @allure.step('Проверяем авторизацию пользователя')
+    def is_user_authorized(self):
+        return self.is_element_visible(self.locators.PLACE_ORDER_BUTTON)
+
+
     @allure.step('Переходим в конструктор')
     def go_to_constructor(self):
         self.click_element(self.locators.CONSTRUCTOR_BUTTON)
 
     @allure.step('Переходим в ленту заказов')                               
     def go_to_order_feed(self):
-        # оверлей модалки перекрывает ссылку "Лента заказов" даже после закрытия
-        # поэтому решил использовать JS-клик                                              
-        self.driver.execute_script("""
-        var orderFeedLink = document.querySelector('a[href="/feed"]');
-        if (orderFeedLink) orderFeedLink.click();
-    """)
+        self.click_element_js(self.locators.ORDER_FEED_BUTTON)
 
     @allure.step('Открываем детали ингредиента: {ingredient_type}')
     def open_ingredient_details(self, ingredient_type):
@@ -63,15 +67,15 @@ class MainPage(BasePage):
     def get_ingredient_counter_value(self, ingredient_type):
         try:
             if ingredient_type == "bun":
-                ingredient_element = self.driver.find_element(*self.locators.INGREDIENT_BUN)
+                ingredient_element = self.find_element(self.locators.INGREDIENT_BUN)
             elif ingredient_type == "sauce":
-                ingredient_element = self.driver.find_element(*self.locators.INGREDIENT_SAUCE)
+                ingredient_element = self.find_element(self.locators.INGREDIENT_SAUCE)
             elif ingredient_type == "main":
-                ingredient_element = self.driver.find_element(*self.locators.INGREDIENT_MAIN)
+                ingredient_element = self.find_element(self.locators.INGREDIENT_MAIN)
             else:
                 return "0"
-            parent = ingredient_element.find_element(By.XPATH, "./..")
-            counter_element = parent.find_element(By.XPATH, ".//p[@class='counter_counter__num__3nue1']")
+            parent = ingredient_element.find_element(*self.locators.INGREDIENT_PARENT)
+            counter_element = parent.find_element(*self.locators.INGREDIENT_COUNTER_RELATIVE)
             return counter_element.text
         except:
             return "0"            
@@ -89,12 +93,10 @@ class MainPage(BasePage):
         self.drag_and_drop_improved(source_locator, target_locator)            
 
     @allure.step('Перетаскиваем элемент из {source_locator} в {target_locator}')
-    def drag_and_drop_improved(self, source_locator, target_locator):
-         self.find_element(source_locator)
-         self.find_element(target_locator)
-         element_from = self.driver.find_element(*source_locator)
-         element_to = self.driver.find_element(*target_locator)
-         self.driver.execute_script("""
+    def drag_and_drop_improved(self, source_locator, target_locator):         
+         element_from = self.find_element(source_locator)
+         element_to = self.find_element(target_locator)
+         self.execute_script("""
         var source = arguments[0];
         var target = arguments[1];
 
@@ -130,24 +132,12 @@ class MainPage(BasePage):
 
     @allure.step('Проверяем открытие модального окна заказа')
     def is_order_modal_opened(self, timeout=10):
-        try:
-            WebDriverWait(self.driver, timeout).until(
-            EC.visibility_of_element_located(self.locators.ORDER_MODAL)
-        )
-            return True
-        except:
-            return False
+        return self.is_element_visible(self.locators.ORDER_MODAL, timeout)
         
         
     @allure.step('Ожидаем появление номера заказа в модалке')
     def wait_for_order_number(self, timeout=15):
-        try:
-            WebDriverWait(self.driver, timeout).until(
-            EC.visibility_of_element_located(self.locators.ORDER_NUMBER)
-        )
-            return True
-        except:
-            return False
+        return self.is_element_visible(self.locators.ORDER_NUMBER, timeout)
         
     @allure.step('Ожидаем реальный номер заказа')
     def wait_for_real_order_number(self, timeout=30):
@@ -166,14 +156,6 @@ class MainPage(BasePage):
 
     @allure.step('Закрываем модальное окно заказа')         
     def close_order_modal(self):
-        # так же проблемы с оверлеем поэтому использую JS-клик
-        try:
-            self.driver.execute_script("""
-            var closeBtn = document.querySelector('.Modal_modal__close_modified__3V5XS');
-            if (closeBtn) closeBtn.click();
-        """)
-            return True
-        except:
-            return False
+       return self.click_element_js(self.locators.INGREDIENT_MODAL_CLOSE)
 
    

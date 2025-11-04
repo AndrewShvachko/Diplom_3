@@ -4,8 +4,8 @@ from selenium.webdriver.common.by import By
 
 class OrderFeedLocators:
 
-    TOTAL_ORDERS_COUNT = (By.XPATH, "(//p[contains(@class, 'OrderFeed_number__2MbrQ')])[1]")
-    TODAY_ORDERS_COUNT = (By.XPATH, "(//p[contains(@class, 'OrderFeed_number__2MbrQ')])[2]")
+    TOTAL_ORDERS_COUNT = (By.XPATH, "//p[contains(@class, 'OrderFeed_number__2MbrQ') and preceding-sibling::p[contains(text(), 'Выполнено за все время')]]")
+    TODAY_ORDERS_COUNT = (By.XPATH, "//p[contains(@class, 'OrderFeed_number__2MbrQ') and preceding-sibling::p[contains(text(), 'Выполнено за сегодня')]]")
 
     ORDER_CARDS = (By.XPATH, "//div[contains(@class, 'OrderHistory_listItem')]")
 

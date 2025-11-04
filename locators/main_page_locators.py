@@ -42,5 +42,6 @@ class MainPageLocators:
     LOGIN_BUTTON_AUTH = (By.XPATH, "//button[text()='Войти']")
 
    
-
+    INGREDIENT_PARENT = (By.XPATH, "./..")
+    INGREDIENT_COUNTER_RELATIVE = (By.XPATH, ".//p[contains(@class, 'counter_counter__num__3nue1')]")
     

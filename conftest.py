@@ -2,10 +2,9 @@ import pytest
 import requests
 import allure
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from data.data import Data, DataHelper
-from pages.main_page import MainPage 
+from data.data_helper import DataHelper
+from pages.main_page import MainPage
+from urls import Urls
 
 
 @pytest.fixture(params=['chrome', 'firefox'])
@@ -32,31 +31,32 @@ def user_data():
             "password": password,
             "name": name
         }
-    with allure.step("Создаем пользователя в системе через API"):
-        response = requests.post(f"{Data.BASE_URL}api/auth/register", json=payload)
-        assert response.status_code == 200, "Не удалось создать пользователя"
-    access_token = response.json().get('accessToken')
-    with allure.step("Возвращаем данные пользователя для теста"):
+    access_token = None
+    try:
+        with allure.step("Создаем пользователя в системе через API"):
+            response = requests.post(f"{Urls.BASE_URL}api/auth/register", json=payload)
+            if response.status_code != 200:
+                pytest.fail(f"Не удалось создать пользователя: {response.status_code}")
+            access_token = response.json().get('accessToken')
         yield email, password, name, access_token
-    with allure.step("Удаляем пользователя после теста через API"):
-        if access_token:
-            headers = {'Authorization': f'Bearer {access_token}'}
-            requests.delete(f"{Data.BASE_URL}api/auth/user", headers=headers)
+    finally:
+        with allure.step("Удаляем пользователя после теста через API"):
+            if access_token:
+                try:
+                    headers = {'Authorization': f'Bearer {access_token}'}
+                    requests.delete(f"{Urls.BASE_URL}api/auth/user", headers=headers)
+                except Exception as e:
+                    pass                   
+    
 
 @pytest.fixture
 def login_user(driver, user_data):
     email, password, name, access_token = user_data
     with allure.step(f"Авторизуем пользователя {email} в UI"):
         main_page = MainPage(driver)
-        main_page.open_url(Data.BASE_URL)
-        main_page.click_element(main_page.locators.LOGIN_BUTTON_MAIN)
-        main_page.find_element(main_page.locators.EMAIL_INPUT).send_keys(email)
-        main_page.find_element(main_page.locators.PASSWORD_INPUT).send_keys(password)
-        main_page.click_element(main_page.locators.LOGIN_BUTTON_AUTH)
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located(main_page.locators.PLACE_ORDER_BUTTON)
-        )
-        is_authorized = main_page.is_element_visible(main_page.locators.PLACE_ORDER_BUTTON)
-        assert is_authorized, "Не удалось авторизовать пользователя в UI"
-        return email, password, name, access_token
-                                
+        main_page.open_url(Urls.BASE_URL)
+        main_page.login(email, password)
+        is_authorized = main_page.is_user_authorized()
+        if not is_authorized:
+            pytest.fail("Не удалось авторизовать пользователя в UI")
+        return email, password, name, access_token    

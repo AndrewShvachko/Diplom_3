@@ -1,5 +1,6 @@
 import pytest
 import allure
+from urls import Urls
 from data.data import Data
 from pages.main_page import MainPage
 
@@ -11,7 +12,7 @@ class TestIngredients:
     @allure.title('Открытие и закрытие модального окна ингредиента')
     def test_ingredient_modal_open_and_close(self, driver):
         main_page = MainPage(driver)
-        main_page.open_url(Data.BASE_URL)    
+        main_page.open_url(Urls.BASE_URL)       
         main_page.open_ingredient_details("bun")
         assert main_page.is_ingredient_modal_opened(), "Модальное окно ингредиента не открылось"    
         main_page.close_ingredient_modal()
@@ -22,7 +23,7 @@ class TestIngredients:
     @allure.title('Отображение деталей ингредиента в модальном окне')
     def test_ingredient_details_in_modal(self, driver):
         main_page = MainPage(driver)
-        main_page.open_url(Data.BASE_URL)
+        main_page.open_url(Urls.BASE_URL)
         main_page.open_ingredient_details("sauce")
         ingredient_name = main_page.get_ingredient_name_from_modal()
         assert Data.INGREDIENTS["sauce"] in ingredient_name,\
@@ -32,7 +33,7 @@ class TestIngredients:
     @allure.title('Увеличение счетчика ингредиента при добавлении')
     def test_ingredient_counter_increases_when_added(self, driver):
         main_page = MainPage(driver)
-        main_page.open_url(Data.BASE_URL)
+        main_page.open_url(Urls.BASE_URL)
         counter_before = main_page.get_ingredient_counter_value("bun")
         main_page.add_ingredient_to_constructor("bun")
         counter_after = main_page.get_ingredient_counter_value("bun")            
